@@ -91,6 +91,30 @@ def reset_probability(group_id):
     save_current_probability(group_id, INITIAL_PROBABILITY)
 
 
+# 添加新的函数来管理参与用户
+def get_participants(group_id):
+    participants_file = os.path.join(DATA_DIR, f"{group_id}_participants.json")
+    if os.path.exists(participants_file):
+        with open(participants_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+
+def save_participants(group_id, participants):
+    participants_file = os.path.join(DATA_DIR, f"{group_id}_participants.json")
+    with open(participants_file, "w", encoding="utf-8") as f:
+        json.dump(participants, f)
+
+
+def add_participant(group_id, user_id):
+    participants = get_participants(group_id)
+    if user_id not in participants:
+        participants.append(user_id)
+        save_participants(group_id, participants)
+        return True
+    return False
+
+
 # 群消息处理函数
 async def handle_MuteWheel_group_message(websocket, msg):
     # 确保数据目录存在
@@ -107,10 +131,35 @@ async def handle_MuteWheel_group_message(websocket, msg):
         if raw_message == "mw":
             await toggle_function_status(websocket, group_id, message_id, authorized)
             return
+
+        # 处理加入轮盘赌
+        if raw_message == "mwjoin":
+            if role in ["admin", "owner"] or user_id in owner_id:
+                await send_group_msg(
+                    websocket,
+                    group_id,
+                    f"[CQ:reply,id={message_id}]管理员和机器人主人不能参与轮盘赌哦~",
+                )
+                return
+
+            if add_participant(group_id, user_id):
+                await send_group_msg(
+                    websocket,
+                    group_id,
+                    f"[CQ:reply,id={message_id}]✅成功加入轮盘赌！请注意发言~",
+                )
+            else:
+                await send_group_msg(
+                    websocket,
+                    group_id,
+                    f"[CQ:reply,id={message_id}]你已经在轮盘赌名单中了哦~",
+                )
+            return
+
         # 检查是否开启
         if load_function_status(group_id):
-            # 管理员和机器人自己不参与轮盘赌
-            if role in ["admin", "owner"] or user_id in owner_id:
+            # 检查用户是否参与轮盘赌
+            if user_id not in get_participants(group_id):
                 return
 
             current_prob = get_current_probability(group_id)
@@ -134,7 +183,9 @@ async def handle_MuteWheel_group_message(websocket, msg):
                 reset_probability(group_id)
             else:
                 # 增加概率
-                new_prob = min(current_prob + PROBABILITY_INCREMENT, MAX_PROBABILITY)
+                new_prob = current_prob + PROBABILITY_INCREMENT
+                if new_prob > MAX_PROBABILITY:
+                    new_prob = MAX_PROBABILITY
                 save_current_probability(group_id, new_prob)
 
                 # 可选：发送当前概率提示
