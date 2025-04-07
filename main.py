@@ -115,6 +115,16 @@ def add_participant(group_id, user_id):
     return False
 
 
+# 添加一个新的函数来处理用户退出
+def remove_participant(group_id, user_id):
+    participants = get_participants(group_id)
+    if user_id in participants:
+        participants.remove(user_id)
+        save_participants(group_id, participants)
+        return True
+    return False
+
+
 # 群消息处理函数
 async def handle_MuteWheel_group_message(websocket, msg):
     # 确保数据目录存在
@@ -153,6 +163,22 @@ async def handle_MuteWheel_group_message(websocket, msg):
                     websocket,
                     group_id,
                     f"[CQ:reply,id={message_id}]你已经在轮盘赌名单中了哦~",
+                )
+            return
+
+        # 处理退出轮盘赌
+        if raw_message == "mwquit":
+            if remove_participant(group_id, user_id):
+                await send_group_msg(
+                    websocket,
+                    group_id,
+                    f"[CQ:reply,id={message_id}]✅成功退出轮盘赌！你可以安全发言了~",
+                )
+            else:
+                await send_group_msg(
+                    websocket,
+                    group_id,
+                    f"[CQ:reply,id={message_id}]你还没有加入轮盘赌，无需退出~",
                 )
             return
 
