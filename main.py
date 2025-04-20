@@ -190,23 +190,39 @@ async def handle_MuteWheel_group_message(websocket, msg):
 
             current_prob = get_current_probability(group_id)
 
-            # 随机判定是否禁言
+            # 随机判定是否触发禁言
             if random.random() < current_prob:
-                # 随机禁言时间（秒）
-                mute_time = random.randint(MUTE_TIME_RANGE[0], MUTE_TIME_RANGE[1])
+                # 获取所有参与轮盘赌的用户
+                participants = get_participants(group_id)
+                # 移除当前发言用户
+                if user_id in participants:
+                    participants.remove(user_id)
+                
+                # 如果还有其他参与者
+                if participants:
+                    # 随机选择一个用户禁言
+                    target_user_id = random.choice(participants)
+                    # 随机禁言时间（秒）
+                    mute_time = random.randint(MUTE_TIME_RANGE[0], MUTE_TIME_RANGE[1])
 
-                # 执行禁言（直接使用秒数）
-                await set_group_ban(websocket, group_id, user_id, mute_time)
+                    # 执行禁言
+                    await set_group_ban(websocket, group_id, target_user_id, mute_time)
 
-                # 发送消息通知（修改提示信息为秒）
-                await send_group_msg(
-                    websocket,
-                    group_id,
-                    f"[CQ:reply,id={message_id}]🎯命中！禁言{mute_time}秒\n当前概率: {current_prob:.1%}",
-                )
+                    # 发送消息通知
+                    await send_group_msg(
+                        websocket,
+                        group_id,
+                        f"[CQ:reply,id={message_id}]🎯[CQ:at,qq={user_id}]的发言触发了轮盘赌！[CQ:at,qq={target_user_id}]被禁言{mute_time}秒\n当前概率: {current_prob:.1%}"
+                    )
 
-                # 重置概率
-                reset_probability(group_id)
+                    # 重置概率
+                    reset_probability(group_id)
+                else:
+                    # 没有其他参与者，增加概率
+                    new_prob = current_prob + PROBABILITY_INCREMENT
+                    if new_prob > MAX_PROBABILITY:
+                        new_prob = MAX_PROBABILITY
+                    save_current_probability(group_id, new_prob)
             else:
                 # 增加概率
                 new_prob = current_prob + PROBABILITY_INCREMENT
