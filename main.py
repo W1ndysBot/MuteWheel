@@ -25,7 +25,7 @@ DATA_DIR = os.path.join(
 )
 
 # 在DATA_DIR定义后修改MUTE_TIME_RANGE常量
-INITIAL_PROBABILITY = 0.01  # 初始概率 2%
+INITIAL_PROBABILITY = 0.01  # 初始概率 1%
 PROBABILITY_INCREMENT = 0.01  # 每次增加 1%
 MAX_PROBABILITY = 1  # 最大概率 100%
 MUTE_TIME_RANGE = (1, 10)  # 禁言时间范围（秒）
