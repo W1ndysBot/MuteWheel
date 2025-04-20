@@ -25,9 +25,9 @@ DATA_DIR = os.path.join(
 )
 
 # 在DATA_DIR定义后修改MUTE_TIME_RANGE常量
-INITIAL_PROBABILITY = 0.01  # 初始概率 1%
+INITIAL_PROBABILITY = 0.01  # 初始概率 2%
 PROBABILITY_INCREMENT = 0.01  # 每次增加 1%
-MAX_PROBABILITY = 0.50  # 最大概率 50%
+MAX_PROBABILITY = 1  # 最大概率 100%
 MUTE_TIME_RANGE = (1, 10)  # 禁言时间范围（秒）
 
 
@@ -133,7 +133,6 @@ async def handle_MuteWheel_group_message(websocket, msg):
         user_id = str(msg.get("user_id"))
         group_id = str(msg.get("group_id"))
         raw_message = str(msg.get("raw_message"))
-        role = str(msg.get("sender", {}).get("role"))
         message_id = str(msg.get("message_id"))
         authorized = user_id in owner_id
 
@@ -144,13 +143,6 @@ async def handle_MuteWheel_group_message(websocket, msg):
 
         # 处理加入轮盘赌
         if raw_message == "mwjoin":
-            if role in ["admin", "owner"] or user_id in owner_id:
-                await send_group_msg(
-                    websocket,
-                    group_id,
-                    f"[CQ:reply,id={message_id}]管理员和机器人主人不能参与轮盘赌哦~",
-                )
-                return
 
             if add_participant(group_id, user_id):
                 await send_group_msg(
@@ -197,7 +189,7 @@ async def handle_MuteWheel_group_message(websocket, msg):
                 # 移除当前发言用户
                 if user_id in participants:
                     participants.remove(user_id)
-                
+
                 # 如果还有其他参与者
                 if participants:
                     # 随机选择一个用户禁言
@@ -212,7 +204,7 @@ async def handle_MuteWheel_group_message(websocket, msg):
                     await send_group_msg(
                         websocket,
                         group_id,
-                        f"[CQ:reply,id={message_id}]🎯[CQ:at,qq={user_id}]的发言触发了轮盘赌！[CQ:at,qq={target_user_id}]被禁言{mute_time}秒\n当前概率: {current_prob:.1%}"
+                        f"[CQ:reply,id={message_id}]🎯[CQ:at,qq={user_id}]的发言触发了轮盘赌！[CQ:at,qq={target_user_id}]被禁言{mute_time}秒\n当前概率: {current_prob:.1%}",
                     )
 
                     # 重置概率
