@@ -204,7 +204,7 @@ async def handle_MuteWheel_group_message(websocket, msg):
                     await send_group_msg(
                         websocket,
                         group_id,
-                        f"[CQ:reply,id={message_id}]🎯[CQ:at,qq={user_id}]的发言触发了轮盘赌！[CQ:at,qq={target_user_id}]被禁言{mute_time}秒\n当前概率: {current_prob:.1%}",
+                        f"[CQ:reply,id={message_id}]🎯[CQ:at,qq={user_id}]({user_id})的发言触发了轮盘赌！[CQ:at,qq={target_user_id}]被禁言{mute_time}秒\n当前概率: {current_prob:.1%}",
                     )
 
                     # 重置概率
